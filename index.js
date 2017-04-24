@@ -1,14 +1,25 @@
-var request = require('nets')
 var backoff = require('backoff')
+var xtend = require('xtend')
 
-module.exports = function (opts, cb) {
+module.exports = function (uri, opts, cb) {
+  var params = uri.reqOpts ? uri.reqOpts : uri
+
   if (typeof opts === 'function') {
     cb = opts
+    if (typeof uri === 'string') {
+      params = { uri: uri }
+    }
+  } else {
+    params = opts.reqOpts ? xtend(opts.reqOpts, { uri: uri }) : { uri: uri }
   }
+
+  var timeout = opts.timeout || 30 * 1000
+
+  var request = opts.request || require('nets')
 
   var xb = backoff.fibonacci({
     initialDelay: 1000,
-    maxDelay: 30 * 1000
+    maxDelay: timeout
   })
 
   xb.on('backoff', function (n, d) {
@@ -16,7 +27,7 @@ module.exports = function (opts, cb) {
   })
 
   xb.on('ready', function () {
-    request(opts, function (err, res, body) {
+    request(params, function (err, res, body) {
       if (err) {
         cb(err)
       } else if (res.statusCode === 202) {

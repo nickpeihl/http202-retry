@@ -1,18 +1,19 @@
-# request-retry
+# http202-retry
 
 A module to automatically retry HTTP requests if a [HTTP 202 response][2] is returned.
 
-I built this opinionated module specifically for interacting with GeoJSON APIs on [ArcGIS Open Data websites][1], but it may be useful for other purposes.
+I built this module specifically for interacting with GeoJSON APIs on [ArcGIS Open Data websites][1], but it may be useful for other purposes.
 
-The GeoJSON API on [ArcGIS Open Data websites][1] returns a [202 Accepted response code][2] when a filter is applied to a dataset. This means the server is still processing the request. This module catches that response code and automatically schedules another request after a short duration. The process repeats for 30s or until data is returned.
+The GeoJSON API on [ArcGIS Open Data websites][1] returns a [202 Accepted response code][2] when a filter is applied to a dataset. This means the server is still processing the request. This module catches that response code and automatically schedules another request after a short duration. By default the process repeats for 30s or until data is returned.
 
 # Usage
 ``` javascript
-var reqRetry = require('request-retry')
+var reqRetry = require('http202-retry')
 
-reqRetry({
-  url: 'http://data.sjcgis.org/datasets/167317f36825482abeae53637ad7a7f4_3.geojson?where=Island%20like%20\'%25Decatur%25\'&geometry={"xmin":-13838177.03790262,"ymin":6156211.922408805,"xmax":-13544658.849287685,"ymax":6247936.356350972,"spatialReference":{"wkid":102100}}',
-  json: true
+reqRetry('http://data.sjcgis.org/datasets/167317f36825482abeae53637ad7a7f4_3.geojson?where=Island%20like%20\'%25Decatur%25\'', {
+  reqOpts: {
+    json: true
+  }
 }, function (err, res, body) {
   if (err) throw err
   if (res.statusCode === 200) {
@@ -22,27 +23,33 @@ reqRetry({
   }
 })
 
+
 ```
 
 # API
 
 ``` javascript
-var reqRetry = require('request-retry')
+var reqRetry = require('http202-retry')
 ```
 
-### `reqRetry(opts, cb)`
+### `reqRetry([url], [opts], cb)`
 ___
-Creates a new [request][3] ([xhr][4] in browsers). Automatically retries the request several times (up to 30s) if `response.statusCode === 202`.
+By default, creates a new [request][3] ([xhr][4] in browsers). Automatically retries the request several times (up to 30s by default) if `response.statusCode === 202`.
 
-* `opts` {Object} are passed to [requestOptions][6] parameter ([xhrOptions][7] in the browser). Include `json:true` if requesting JSON or GeoJSON data.
+* `[opts.request]` {Function} if specified, a [substitute XMLHttpRequest GET function](https://github.com/zeke/npm-collection-http-clients). See [this example](./example/request.js). If not specified, [nets](http://npmjs.com/nets) is used.
+
+* `[opts.reqOpts]` {Object} options passed to [requestOptions][6] parameter ([xhrOptions][7] in the browser). Include `json:true` if requesting JSON or GeoJSON data.
+
+* `[opts.timeout]` {Number} Time, in milliseconds, to wait until timeout (default `30000`)
+
 * `cb` {Function} is called with the arguments ([`Error`][5], `response`, `body`)
 
-[`Error`][5] is only returned if something is preventing the request or after retrying for >30s with no data. HTTP 400 or 500 responses will not return an error. You should catch these yourself.
+[`Error`][5] is only returned if something is preventing the request or after time out. HTTP 400 or 500 responses will not return an error. You should catch these yourself.
 
 # Installation
 
 ```
-npm install request-retry
+npm install http202-retry
 ```
 
 # License
