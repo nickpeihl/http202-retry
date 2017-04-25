@@ -1,4 +1,5 @@
-# http202-retry
+# http202-retry 
+![travis badge](https://travis-ci.org/nickpeihl/http202-retry.svg?branch=master)
 
 A module to automatically retry HTTP requests if a [HTTP 202 response][2] is returned.
 
